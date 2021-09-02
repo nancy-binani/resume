@@ -1,25 +1,65 @@
-import logo from './logo.svg';
-import './App.css';
+import Navbar from "./components/navbar";
+import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
+import Login from "./components/login";
+import SignUp from "./components/signup";
+import Home from "./components/home";
+import { useEffect } from "react";
+import { auth, firestore } from "./firebase";
+import { useDispatch } from "react-redux";
+import { setUser } from "./redux/actions";
+import Personal from "./components/personal";
+import Qualifications from "./components/qualifications";
+import PublicPreview from "./components/publicPreview";
+let App = () => {
+  let dispatch = useDispatch();
 
-function App() {
+  useEffect(() => {
+    let unsub = auth.onAuthStateChanged(async (user) => {
+      dispatch(setUser(user));
+
+      if (user) {
+        let { uid, email } = user;
+
+        let docRef = firestore.collection("users").doc(uid);
+        let doc = await docRef.get();
+        if (!doc.exists) {
+          docRef.set({ email });
+        }
+      }
+    });
+
+    return () => {
+      unsub();
+    };
+  }, []);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <>
+      <Router>
+        <Navbar />
+        <Switch>
+          <Route path="/publicpreview/:rid">
+            <PublicPreview />
+          </Route>
+          <Route path="/qualifications">
+            <Qualifications />
+          </Route>
+          <Route path="/personal">
+            <Personal />
+          </Route>
+          <Route path="/login">
+            <Login />
+          </Route>
+          <Route path="/signup">
+            <SignUp />
+          </Route>
+          <Route path="/">
+            <Home />
+          </Route>
+        </Switch>
+      </Router>
+    </>
   );
-}
+};
 
 export default App;
